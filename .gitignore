@@ -1,0 +1,37 @@
+# 環境設定ファイル
+.env
+.env.*
+.env.local
+!.env.example
+
+# Go関連（バックエンド）
+*.exe
+*.test
+*.prof
+/backend/tmp/
+/tmp/
+
+# Node.js関連（フロントエンド）
+node_modules/
+npm-debug.log*
+
+# Next.js関連
+.next/
+out/
+build/
+dist/
+
+# IDE・エディタ
+.vscode/
+.idea/
+
+# OS生成ファイル
+.DS_Store
+._*
+
+# ログファイル
+*.log
+logs/
+
+# その他
+HELP.md

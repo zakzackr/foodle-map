@@ -1,0 +1,758 @@
+openapi: 3.0.4
+info:
+  title: ラーメンブログ API - OpenAPI 3.0
+  description: |-
+    このAPIは、ラーメンブログサービス「mogumogu」のためのREST
+    APIです。記事の表示・投稿・編集機能を提供します。
+    本APIは、JWT認証およびロールベースのアクセス制御によって保護されており、ユーザーは安心して利用できます。
+    認証には、HttpOnly Cookieに保存されたJWTトークンを使用します。
+  version: 1.0.0
+servers:
+  # swagger-uiコンテナからbackendコンテナへのリクエスト
+  - url: http://localhost:8080/api/v1
+tags:
+  - name: article
+    description: 記事に関するエンドポイント
+  - name: user
+    description: ユーザーに関するエンドポイント
+paths:
+  /articles:
+    get:
+      tags:
+        - article
+      summary: 記事一覧の取得
+      description: 記事一覧の取得（ADMINまたはUSERロールが必要）
+      operationId: getArticles
+      # security:
+      #   - jwtCookieAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - article
+      summary: 記事の投稿
+      description: 記事の投稿（ADMINまたはUSERロールが必要）
+      operationId: createArticle
+      # security:
+      #   - jwtCookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleInput'
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /articles/{articleId}:
+    get:
+      tags:
+        - article
+      summary: 記事の取得
+      description: 記事の取得（ADMINまたはUSERロールが必要）
+      operationId: getArticle
+      # security:
+      #   - jwtCookieAuth: []
+      parameters:
+        - name: articleId
+          in: path
+          description: ID of article
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ArticleNotFound:
+                  summary: Article not found
+                  value:
+                    code: ARTICLE_NOT_FOUND
+                    message: 記事が見つかりませんでした。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags:
+        - article
+      summary: 記事の編集
+      description: 記事の編集（ADMINまたはUSERロールが必要）
+      operationId: editArticle
+      # security:
+      #   - jwtCookieAuth: []
+      parameters:
+        - name: articleId
+          in: path
+          description: ID of article
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ArticleNotFound:
+                  summary: Article not found
+                  value:
+                    code: ARTICLE_NOT_FOUND
+                    message: 記事が見つかりませんでした。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - article
+      summary: 記事の削除
+      description: 記事の削除（ADMINまたはUSERロールが必要）
+      operationId: deleteArticle
+      # security:
+      #   - jwtCookieAuth: []
+      parameters:
+        - name: articleId
+          in: path
+          description: ID of article
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ArticleNotFound:
+                  summary: Article not found
+                  value:
+                    code: ARTICLE_NOT_FOUND
+                    message: 記事が見つかりませんでした。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /articles/{articleId}/likes:
+    post:
+      tags:
+        - article
+      summary: 記事にいいねを付与
+      description: 記事にいいねを付与（ADMINまたはUSERロールが必要）
+      # operationId: addLike
+      # security:
+      #   - jwtCookieAuth: []
+      parameters:
+        - name: articleId
+          in: path
+          description: ID of article
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ArticleNotFound:
+                  summary: Article not found
+                  value:
+                    code: ARTICLE_NOT_FOUND
+                    message: 記事が見つかりませんでした。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    
+  /auth/register:
+    post:
+      tags:
+        - user
+      summary: ユーザーの新規登録
+      description: ユーザーの新規登録
+      operationId: userRegister
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '409':
+          description: Username or Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                UsernameExists:
+                  summary: Username or Email already exists
+                  value:
+                    code: DUPLICATE_RESOURCE
+                    message: このユーザーネームは既に使用されています。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      tags:
+        - user
+      summary: ユーザーのログイン
+      description: ユーザーのログイン
+      operationId: userLogin
+      requestBody:
+        description: Logged in user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      tags:
+        - user
+      summary: ユーザーのログアウト
+      description: ユーザーのログアウト（ADMINまたはUSERロールが必要）
+      operationId: userLogout
+      # security:
+      #   - jwtCookieAuth: []
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ログアウトしました。
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InvalidToken:
+                  summary: Invalid token
+                  value:
+                    code: INVALID_TOKEN
+                    message: 不正な認証情報です。
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                InternalServerError:
+                  summary: Internal server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    message: サーバー内部で予期しないエラーが発生しました。
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        authorId:
+          type: integer 
+          format: int64
+          example: 10
+        title:
+          type: string
+          example: 私の趣味について
+        body:
+          type: string
+          example: 私はグルメです。京都でおすすめなラーメン店を5件紹介します。
+        imageUrls:
+          type: array
+          description: 記事に添付した写真のURLリスト
+          items:
+            type: string
+            format: uri
+          example:
+            - "https://example.com/images/1.jpg"
+            - "https://example.com/images/2.jpg"
+        likesCount:
+          type: integer
+          description: いいね数
+          example: 24
+        mvpCount:
+          type: integer
+          description: MVP数
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-06-07T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-06-07T13:00:00Z"
+    ArticleInput:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 京都ラーメンのおすすめ
+        body:
+          type: string
+          example: |
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "こんにちは、Tiptapの世界！"
+                }
+              ]
+            }
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+          example: ["https://example.com/1.jpg"]
+      required:
+        - title
+        - body
+    Topic:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        title:
+          type: string
+          example: 趣味について
+        description:
+          type: string
+          example: あなたの趣味について教えてください！
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-06-07T12:00:00Z"
+    TopicInput:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 趣味について
+        description:
+          type: string
+          example: あなたの趣味について教えてください！
+      required:
+        - title
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: tarotaro
+        firstName:
+          type: string
+          example: Taro
+        lastName:
+          type: string
+          example: Ito
+        email:
+          type: string
+          example: taro@gmail.com
+        bio:
+          type: string
+          example: プロダクト開発チームでバックエンドエンジニアしてます！
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-06-07T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-06-07T13:00:00Z"
+    RegisterInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: "password123"
+        firstName:
+          type: string
+          example: 太郎
+        lastName:
+          type: string
+          example: 山田
+        username:
+          type: string
+          example: "taroimo"
+      required:
+        - email
+        - password
+        - username
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: "password123"
+      required:
+        - email
+        - password
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: AN_EXAMPLE_OF_ERROR
+        message:
+          type: string
+          example: 〜というエラーが発生しています。
+  securitySchemes:
+    jwtCookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+      description: HttpOnlyのCookieに保管されたJWTトークンを認証に使用します。

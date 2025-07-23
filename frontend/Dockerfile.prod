@@ -1,0 +1,24 @@
+# 1. Build stage
+FROM node:20-alpine as builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# ビルド時に使う環境変数（CSRで参照するために必要）
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
+RUN npm run build
+
+# 2. Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+COPY --from=builder /app ./
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

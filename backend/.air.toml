@@ -1,0 +1,67 @@
+# ラーメンブログ用Air設定ファイル
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  # ビルドコマンド（cmd/server/main.goを指定）
+  cmd = "go build -o ./tmp/ramen-blog ./cmd/server"
+  # 実行ファイルパス
+  bin = "./tmp/ramen-blog"
+  # ビルド後の待機時間（ミリ秒）
+  delay = 1000
+  # 監視から除外するディレクトリ
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", ".git"]
+  # 監視から除外するファイル
+  exclude_file = []
+  # 正規表現で除外（テストファイルなど）
+  exclude_regex = ["_test.go"]
+  # 変更がない場合も除外
+  exclude_unchanged = false
+  # シンボリックリンクを追跡
+  follow_symlink = false
+  # 監視する拡張子
+  include_ext = ["go", "mod", "toml"]
+  # 監視するディレクトリ（空の場合は全て）
+  include_dir = []
+  # 特定ファイルを監視
+  include_file = []
+  # プロセス終了の待機時間
+  kill_delay = "1s"
+  # ビルドエラーログファイル
+  log = "build-errors.log"
+  # ポーリング使用（通常はfalse）
+  poll = false
+  # ポーリング間隔
+  poll_interval = 0
+  # 再実行設定
+  rerun = false
+  rerun_delay = 500
+  # 割り込み信号送信
+  send_interrupt = false
+  # ルートで停止
+  stop_on_root = false
+
+[color]
+  # 各ログの色設定
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  # メインプロセスのログのみ
+  main_only = false
+  # タイムスタンプ表示
+  time = true
+
+[misc]
+  # 終了時のクリーンアップ
+  clean_on_exit = true
+
+[screen]
+  # 再ビルド時の画面クリア
+  clear_on_rebuild = true
+  # スクロール位置保持
+  keep_scroll = false
