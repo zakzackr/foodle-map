@@ -14,7 +14,7 @@
 Run
 
 ```bash
-gemini -p `$ARGUMENTS`
+gemini -p '$ARGUMENTS'
 ```
 
 When web search is needed, run via Task Tool:
