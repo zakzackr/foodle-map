@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foodle Map - マップ & 店舗詳細</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .star-rating {
+            display: inline-flex;
+            gap: 2px;
+        }
+        .star {
+            color: #d1d5db;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star.filled {
+            color: #fbbf24;
+        }
+        .star:hover {
+            color: #fbbf24;
+        }
+        .map-pin {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .map-pin:hover {
+            transform: translate(-50%, -100%) scale(1.1);
+        }
+        .modal {
+            display: none;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .carousel-container {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+        }
+        .carousel-item {
+            scroll-snap-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="utensils" class="w-5 h-5 text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-900">Foodle Map</h1>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="hidden md:flex flex-1 max-w-lg mx-8">
+                <div class="relative w-full">
+                    <input type="text" placeholder="お店や料理を検索..." 
+                           class="w-full px-4 py-2 pl-10 bg-gray-100 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 w-5 h-5 text-gray-400"></i>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <div class="flex items-center space-x-4">
+                <button onclick="showPage('feed')" class="px-4 py-2 text-orange-500 border-b-2 border-orange-500" id="feed-tab">
+                    フィード
+                </button>
+                <button onclick="showPage('map')" class="px-4 py-2 text-gray-600 hover:text-orange-500 border-b-2 border-transparent hover:border-orange-500" id="map-tab">
+                    マップ
+                </button>
+                <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Feed Page -->
+    <div id="feed-page" class="page active">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+            <!-- Feed Header -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">フィード</h2>
+                <!-- Filter Tabs -->
+                <div class="flex space-x-4 border-b border-gray-200">
+                    <button class="px-4 py-2 border-b-2 border-orange-500 text-orange-600 font-medium">
+                        フォロー中
+                    </button>
+                    <button class="px-4 py-2 border-b-2 border-transparent text-gray-600 hover:text-orange-600 hover:border-orange-500">
+                        おすすめ
+                    </button>
+                    <button class="px-4 py-2 border-b-2 border-transparent text-gray-600 hover:text-orange-600 hover:border-orange-500">
+                        新着
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feed Content -->
+            <div class="space-y-6">
+                <!-- Review Post 1 -->
+                <article class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <!-- Post Header -->
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">田中太郎</h3>
+                                <p class="text-sm text-gray-500">2時間前</p>
+                            </div>
+                        </div>
+                        <button class="p-2 text-gray-400 hover:text-gray-600">
+                            <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Restaurant Info -->
+                    <div class="px-4 pb-3">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">ラーメン太郎 新宿店</h4>
+                                <p class="text-sm text-gray-600">ラーメン • 新宿区</p>
+                            </div>
+                            <div class="ml-auto">
+                                <div class="star-rating">
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star">★</span>
+                                </div>
+                                <p class="text-sm text-gray-600 text-center">4.0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Images -->
+                    <div class="carousel-container flex overflow-x-auto">
+                        <div class="carousel-item flex-none w-full">
+                            <div class="aspect-square bg-gray-200 flex items-center justify-center">
+                                <i data-lucide="image" class="w-16 h-16 text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="carousel-item flex-none w-full">
+                            <div class="aspect-square bg-gray-300 flex items-center justify-center">
+                                <i data-lucide="image" class="w-16 h-16 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Actions -->
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button class="flex items-center space-x-2 text-gray-600 hover:text-red-500">
+                                <i data-lucide="heart" class="w-6 h-6"></i>
+                                <span class="text-sm">24</span>
+                            </button>
+                            <button class="flex items-center space-x-2 text-gray-600 hover:text-blue-500">
+                                <i data-lucide="message-circle" class="w-6 h-6"></i>
+                                <span class="text-sm">8</span>
+                            </button>
+                            <button class="text-gray-600 hover:text-blue-500">
+                                <i data-lucide="share" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        <button class="text-gray-600 hover:text-orange-500">
+                            <i data-lucide="bookmark" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+
+                    <!-- Post Content -->
+                    <div class="px-4 pb-4">
+                        <p class="text-gray-900 mb-2">
+                            <span class="font-semibold">田中太郎</span> 
+                            新宿で見つけた最高のラーメン店！スープが濃厚でめちゃくちゃ美味しかった🍜 チャーシューも分厚くて満足度高い。
+                        </p>
+                        <div class="text-sm text-gray-500 mb-3">
+                            #ラーメン #新宿グルメ #美味しい
+                        </div>
+                        
+                        <!-- Detailed Review -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                            <div class="grid grid-cols-2 gap-3 mb-2">
+                                <div class="flex justify-between">
+                                    <span>味:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>価格:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>雰囲気:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>接客:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments Preview -->
+                    <div class="px-4 pb-4">
+                        <div class="text-sm text-gray-500 mb-2">コメント8件をすべて表示</div>
+                        <div class="space-y-2">
+                            <div class="flex space-x-2">
+                                <span class="font-semibold text-sm">佐藤花子</span>
+                                <span class="text-sm text-gray-700">私も行ってみたい！</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Review Post 2 -->
+                <article class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <!-- Post Header -->
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">佐藤花子</h3>
+                                <p class="text-sm text-gray-500">5時間前</p>
+                            </div>
+                        </div>
+                        <button class="p-2 text-gray-400 hover:text-gray-600">
+                            <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Restaurant Info -->
+                    <div class="px-4 pb-3">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">パスタ・デル・マーレ</h4>
+                                <p class="text-sm text-gray-600">イタリアン • 渋谷区</p>
+                            </div>
+                            <div class="ml-auto">
+                                <div class="star-rating">
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                </div>
+                                <p class="text-sm text-gray-600 text-center">5.0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Image -->
+                    <div class="aspect-square bg-gray-200 flex items-center justify-center">
+                        <i data-lucide="image" class="w-16 h-16 text-gray-400"></i>
+                    </div>
+
+                    <!-- Post Actions -->
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button class="flex items-center space-x-2 text-red-500">
+                                <i data-lucide="heart" class="w-6 h-6 fill-current"></i>
+                                <span class="text-sm">156</span>
+                            </button>
+                            <button class="flex items-center space-x-2 text-gray-600 hover:text-blue-500">
+                                <i data-lucide="message-circle" class="w-6 h-6"></i>
+                                <span class="text-sm">23</span>
+                            </button>
+                            <button class="text-gray-600 hover:text-blue-500">
+                                <i data-lucide="share" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        <button class="text-orange-500">
+                            <i data-lucide="bookmark" class="w-6 h-6 fill-current"></i>
+                        </button>
+                    </div>
+
+                    <!-- Post Content -->
+                    <div class="px-4 pb-4">
+                        <p class="text-gray-900 mb-2">
+                            <span class="font-semibold">佐藤花子</span> 
+                            渋谷で見つけた本格イタリアンの隠れ家！海老のトマトクリームパスタが絶品でした🍝✨
+                        </p>
+                        <div class="text-sm text-gray-500 mb-3">
+                            #イタリアン #渋谷グルメ #パスタ #デート
+                        </div>
+                        
+                        <!-- Detailed Review -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                            <div class="grid grid-cols-2 gap-3 mb-2">
+                                <div class="flex justify-between">
+                                    <span>味:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>価格:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>雰囲気:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>接客:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments Preview -->
+                    <div class="px-4 pb-4">
+                        <div class="text-sm text-gray-500 mb-2">コメント23件をすべて表示</div>
+                        <div class="space-y-2">
+                            <div class="flex space-x-2">
+                                <span class="font-semibold text-sm">山田次郎</span>
+                                <span class="text-sm text-gray-700">素敵なお店ですね！</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <span class="font-semibold text-sm">鈴木美咲</span>
+                                <span class="text-sm text-gray-700">今度行ってみます</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Recommended Post (Non-followed user) -->
+                <article class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <!-- Recommendation Label -->
+                    <div class="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                        <div class="flex items-center space-x-2 text-sm text-blue-600">
+                            <i data-lucide="star" class="w-4 h-4"></i>
+                            <span>おすすめの投稿</span>
+                        </div>
+                    </div>
+
+                    <!-- Post Header -->
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">グルメ太郎</h3>
+                                <p class="text-sm text-gray-500">1日前</p>
+                            </div>
+                            <button class="ml-4 px-3 py-1 bg-blue-500 text-white text-sm rounded-full hover:bg-blue-600">
+                                フォロー
+                            </button>
+                        </div>
+                        <button class="p-2 text-gray-400 hover:text-gray-600">
+                            <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Restaurant Info -->
+                    <div class="px-4 pb-3">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">寿司花</h4>
+                                <p class="text-sm text-gray-600">寿司 • 港区</p>
+                            </div>
+                            <div class="ml-auto">
+                                <div class="star-rating">
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                    <span class="star filled">★</span>
+                                </div>
+                                <p class="text-sm text-gray-600 text-center">5.0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Image -->
+                    <div class="aspect-square bg-gray-200 flex items-center justify-center">
+                        <i data-lucide="image" class="w-16 h-16 text-gray-400"></i>
+                    </div>
+
+                    <!-- Post Actions -->
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button class="flex items-center space-x-2 text-gray-600 hover:text-red-500">
+                                <i data-lucide="heart" class="w-6 h-6"></i>
+                                <span class="text-sm">89</span>
+                            </button>
+                            <button class="flex items-center space-x-2 text-gray-600 hover:text-blue-500">
+                                <i data-lucide="message-circle" class="w-6 h-6"></i>
+                                <span class="text-sm">12</span>
+                            </button>
+                            <button class="text-gray-600 hover:text-blue-500">
+                                <i data-lucide="share" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        <button class="text-gray-600 hover:text-orange-500">
+                            <i data-lucide="bookmark" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+
+                    <!-- Post Content -->
+                    <div class="px-4 pb-4">
+                        <p class="text-gray-900 mb-2">
+                            <span class="font-semibold">グルメ太郎</span> 
+                            港区の高級寿司店「寿司花」で至高の体験！職人の技術と新鮮なネタに感動しました🍣
+                        </p>
+                        <div class="text-sm text-gray-500 mb-3">
+                            #寿司 #港区 #高級グルメ #職人技
+                        </div>
+                        
+                        <!-- Detailed Review -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                            <div class="grid grid-cols-2 gap-3 mb-2">
+                                <div class="flex justify-between">
+                                    <span>味:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>価格:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                        <span class="star text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>雰囲気:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>接客:</span>
+                                    <div class="star-rating">
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                        <span class="star filled text-xs">★</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Load More Button -->
+                <div class="text-center py-6">
+                    <button class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        もっと見る
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Page -->
+    <div id="map-page" class="page">
+        <div class="flex h-screen pt-16">
+            <!-- Map Area -->
+            <div class="flex-1 relative">
+                <!-- Mock Map -->
+                <div class="w-full h-full bg-green-100 relative overflow-hidden">
+                    <!-- Map Background -->
+                    <div class="w-full h-full bg-gradient-to-br from-green-200 to-blue-200 relative">
+                        <!-- Streets -->
+                        <div class="absolute top-1/3 left-0 w-full h-1 bg-gray-400"></div>
+                        <div class="absolute top-2/3 left-0 w-full h-1 bg-gray-400"></div>
+                        <div class="absolute left-1/4 top-0 w-1 h-full bg-gray-400"></div>
+                        <div class="absolute left-3/4 top-0 w-1 h-full bg-gray-400"></div>
+                        
+                        <!-- Restaurant Pins -->
+                        <div class="map-pin" style="top: 30%; left: 25%;" onclick="selectRestaurant('ramen-taro')">
+                            <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                                <i data-lucide="utensils" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="map-pin" style="top: 60%; left: 70%;" onclick="selectRestaurant('pasta-mare')">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                                <i data-lucide="utensils" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="map-pin" style="top: 45%; left: 60%;" onclick="selectRestaurant('sushi-hana')">
+                            <div class="w-8 h-8 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                                <i data-lucide="utensils" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="map-pin" style="top: 35%; left: 50%;" onclick="selectRestaurant('cafe-aozora')">
+                            <div class="w-8 h-8 bg-yellow-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                                <i data-lucide="coffee" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Map Controls -->
+                    <div class="absolute top-4 right-4 flex flex-col space-y-2">
+                        <button class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50">
+                            <i data-lucide="plus" class="w-5 h-5 text-gray-700"></i>
+                        </button>
+                        <button class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50">
+                            <i data-lucide="minus" class="w-5 h-5 text-gray-700"></i>
+                        </button>
+                        <button class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50">
+                            <i data-lucide="locate" class="w-5 h-5 text-gray-700"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Restaurant List Sidebar -->
+            <div class="w-96 bg-white border-l border-gray-200 overflow-y-auto">
+                <div class="p-4">
+                    <!-- Filter Options -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">フィルター</h3>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm hover:bg-orange-200">
+                                すべて
+                            </button>
+                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200">
+                                ラーメン
+                            </button>
+                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200">
+                                カフェ
+                            </button>
+                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200">
+                                イタリアン
+                            </button>
+                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200">
+                                寿司
+                            </button>
+                        </div>
+                        
+                        <!-- Sort Options -->
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <option>距離順</option>
+                            <option>評価順</option>
+                            <option>投稿数順</option>
+                            <option>価格順</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Restaurant Cards -->
+                    <div class="space-y-4">
+                        <!-- Restaurant 1 -->
+                        <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="showRestaurantDetail('ramen-taro')">
+                            <div class="flex space-x-3">
+                                <div class="w-16 h-16 bg-gray-300 rounded-lg flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900">ラーメン太郎 新宿店</h4>
+                                    <p class="text-sm text-gray-600 mb-1">ラーメン • 新宿区</p>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="star-rating">
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star">★</span>
+                                        </div>
+                                        <span class="text-sm text-gray-600">4.0 (124件)</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm text-gray-500">
+                                        <span>500m</span>
+                                        <span>¥800-1,200</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Restaurant 2 -->
+                        <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="showRestaurantDetail('pasta-mare')">
+                            <div class="flex space-x-3">
+                                <div class="w-16 h-16 bg-gray-300 rounded-lg flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900">パスタ・デル・マーレ</h4>
+                                    <p class="text-sm text-gray-600 mb-1">イタリアン • 渋谷区</p>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="star-rating">
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                        </div>
+                                        <span class="text-sm text-gray-600">5.0 (89件)</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm text-gray-500">
+                                        <span>1.2km</span>
+                                        <span>¥2,000-3,500</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Restaurant 3 -->
+                        <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="showRestaurantDetail('sushi-hana')">
+                            <div class="flex space-x-3">
+                                <div class="w-16 h-16 bg-gray-300 rounded-lg flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900">寿司花</h4>
+                                    <p class="text-sm text-gray-600 mb-1">寿司 • 港区</p>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="star-rating">
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star">★</span>
+                                        </div>
+                                        <span class="text-sm text-gray-600">4.5 (67件)</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm text-gray-500">
+                                        <span>800m</span>
+                                        <span>¥5,000-8,000</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Restaurant 4 -->
+                        <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="showRestaurantDetail('cafe-aozora')">
+                            <div class="flex space-x-3">
+                                <div class="w-16 h-16 bg-gray-300 rounded-lg flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900">カフェ青空</h4>
+                                    <p class="text-sm text-gray-600 mb-1">カフェ • 新宿区</p>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <div class="star-rating">
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star filled">★</span>
+                                            <span class="star">★</span>
+                                        </div>
+                                        <span class="text-sm text-gray-600">4.2 (203件)</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm text-gray-500">
+                                        <span>300m</span>
+                                        <span>¥500-1,500</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant Detail Modal -->
+    <div id="restaurant-detail-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl max-w-4xl max-h-[90vh] overflow-y-auto m-4 w-full">
+            <!-- Modal Header -->
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-900" id="restaurant-name">ラーメン太郎 新宿店</h2>
+                <button onclick="closeRestaurantDetail()" class="p-2 text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Restaurant Info -->
+            <div class="px-6 py-4">
+                <!-- Image Gallery -->
+                <div class="mb-6">
+                    <div class="carousel-container flex overflow-x-auto space-x-4 mb-4">
+                        <div class="carousel-item flex-none w-80 h-64 bg-gray-200 rounded-lg"></div>
+                        <div class="carousel-item flex-none w-80 h-64 bg-gray-300 rounded-lg"></div>
+                        <div class="carousel-item flex-none w-80 h-64 bg-gray-200 rounded-lg"></div>
+                    </div>
+                </div>
+                
+                <!-- Basic Info -->
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">基本情報</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i>
+                                <span>東京都新宿区新宿3-1-1</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="clock" class="w-4 h-4 text-gray-500"></i>
+                                <span>11:00-22:00（定休日：火曜日）</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="phone" class="w-4 h-4 text-gray-500"></i>
+                                <span>03-1234-5678</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="yen-sign" class="w-4 h-4 text-gray-500"></i>
+                                <span>¥800-1,200</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">総合評価</h3>
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="text-3xl font-bold text-orange-500">4.0</div>
+                            <div>
+                                <div class="star-rating mb-1">
+                                    <span class="star filled text-lg">★</span>
+                                    <span class="star filled text-lg">★</span>
+                                    <span class="star filled text-lg">★</span>
+                                    <span class="star filled text-lg">★</span>
+                                    <span class="star text-lg">★</span>
+                                </div>
+                                <div class="text-sm text-gray-600">124件のレビュー</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Rating Breakdown -->
+                        <div class="space-y-2">
+                            <div class="flex items-center space-x-2 text-sm">
+                                <span class="w-12">味</span>
+                                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                                <span class="w-8 text-right">4.2</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <span class="w-12">価格</span>
+                                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 70%"></div>
+                                </div>
+                                <span class="w-8 text-right">3.5</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <span class="w-12">雰囲気</span>
+                                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 80%"></div>
+                                </div>
+                                <span class="w-8 text-right">4.0</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <span class="w-12">接客</span>
+                                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                                <span class="w-8 text-right">3.8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-4 mb-6">
+                    <button class="flex-1 bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600" onclick="showReviewForm()">
+                        レビューを投稿
+                    </button>
+                    <button class="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50">
+                        保存
+                    </button>
+                    <button class="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50">
+                        共有
+                    </button>
+                </div>
+                
+                <!-- Reviews Section -->
+                <div class="border-t border-gray-200 pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">レビュー</h3>
+                        <select class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <option>新しい順</option>
+                            <option>評価が高い順</option>
+                            <option>評価が低い順</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Review Items -->
+                    <div class="space-y-6">
+                        <!-- Review 1 -->
+                        <div class="border-b border-gray-100 pb-6">
+                            <div class="flex items-start space-x-3 mb-3">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <h4 class="font-semibold text-gray-900">田中太郎</h4>
+                                        <div class="star-rating">
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star text-sm">★</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-2">2023年12月15日</p>
+                                    <p class="text-gray-900 mb-3">
+                                        新宿で見つけた最高のラーメン店！スープが濃厚でめちゃくちゃ美味しかった。チャーシューも分厚くて満足度高い。また来たい！
+                                    </p>
+                                    <!-- Review Images -->
+                                    <div class="flex space-x-2 mb-3">
+                                        <div class="w-20 h-20 bg-gray-200 rounded"></div>
+                                        <div class="w-20 h-20 bg-gray-200 rounded"></div>
+                                    </div>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <button class="flex items-center space-x-1 hover:text-orange-500">
+                                            <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                                            <span>12</span>
+                                        </button>
+                                        <button class="hover:text-orange-500">返信</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Review 2 -->
+                        <div class="border-b border-gray-100 pb-6">
+                            <div class="flex items-start space-x-3 mb-3">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <h4 class="font-semibold text-gray-900">佐藤花子</h4>
+                                        <div class="star-rating">
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                            <span class="star filled text-sm">★</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-2">2023年12月10日</p>
+                                    <p class="text-gray-900 mb-3">
+                                        友人と一緒に行きました。醤油ラーメンが特におすすめです。お店の雰囲気も良くて、接客も丁寧でした。
+                                    </p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <button class="flex items-center space-x-1 hover:text-orange-500">
+                                            <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                                            <span>8</span>
+                                        </button>
+                                        <button class="hover:text-orange-500">返信</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- More Reviews Button -->
+                        <div class="text-center">
+                            <button class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                もっと見る
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Posts Section -->
+                <div class="border-t border-gray-200 pt-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">この店舗の投稿</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="aspect-square bg-gray-200 rounded"></div>
+                        <div class="aspect-square bg-gray-300 rounded"></div>
+                        <div class="aspect-square bg-gray-200 rounded"></div>
+                        <div class="aspect-square bg-gray-300 rounded"></div>
+                        <div class="aspect-square bg-gray-200 rounded"></div>
+                        <div class="aspect-square bg-gray-300 rounded"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Form Modal -->
+    <div id="review-form-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl max-w-2xl m-4 w-full">
+            <!-- Modal Header -->
+            <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-900">レビューを投稿</h2>
+                <button onclick="closeReviewForm()" class="p-2 text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Review Form -->
+            <div class="px-6 py-4">
+                <!-- Overall Rating -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">総合評価</label>
+                    <div class="star-rating" id="overall-rating">
+                        <span class="star text-2xl" onclick="setRating('overall', 1)">★</span>
+                        <span class="star text-2xl" onclick="setRating('overall', 2)">★</span>
+                        <span class="star text-2xl" onclick="setRating('overall', 3)">★</span>
+                        <span class="star text-2xl" onclick="setRating('overall', 4)">★</span>
+                        <span class="star text-2xl" onclick="setRating('overall', 5)">★</span>
+                    </div>
+                </div>
+                
+                <!-- Detailed Ratings -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">味</label>
+                        <div class="star-rating" id="taste-rating">
+                            <span class="star" onclick="setRating('taste', 1)">★</span>
+                            <span class="star" onclick="setRating('taste', 2)">★</span>
+                            <span class="star" onclick="setRating('taste', 3)">★</span>
+                            <span class="star" onclick="setRating('taste', 4)">★</span>
+                            <span class="star" onclick="setRating('taste', 5)">★</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">価格</label>
+                        <div class="star-rating" id="price-rating">
+                            <span class="star" onclick="setRating('price', 1)">★</span>
+                            <span class="star" onclick="setRating('price', 2)">★</span>
+                            <span class="star" onclick="setRating('price', 3)">★</span>
+                            <span class="star" onclick="setRating('price', 4)">★</span>
+                            <span class="star" onclick="setRating('price', 5)">★</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">雰囲気</label>
+                        <div class="star-rating" id="atmosphere-rating">
+                            <span class="star" onclick="setRating('atmosphere', 1)">★</span>
+                            <span class="star" onclick="setRating('atmosphere', 2)">★</span>
+                            <span class="star" onclick="setRating('atmosphere', 3)">★</span>
+                            <span class="star" onclick="setRating('atmosphere', 4)">★</span>
+                            <span class="star" onclick="setRating('atmosphere', 5)">★</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">接客</label>
+                        <div class="star-rating" id="service-rating">
+                            <span class="star" onclick="setRating('service', 1)">★</span>
+                            <span class="star" onclick="setRating('service', 2)">★</span>
+                            <span class="star" onclick="setRating('service', 3)">★</span>
+                            <span class="star" onclick="setRating('service', 4)">★</span>
+                            <span class="star" onclick="setRating('service', 5)">★</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Review Text -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">レビュー内容</label>
+                    <textarea 
+                        rows="4" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="お店の感想を詳しく教えてください..."></textarea>
+                </div>
+                
+                <!-- Photo Upload -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">写真を追加</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 transition-colors cursor-pointer">
+                        <i data-lucide="camera" class="w-8 h-8 text-gray-400 mx-auto mb-2"></i>
+                        <p class="text-gray-600">クリックして写真を追加</p>
+                    </div>
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="flex space-x-4">
+                    <button class="flex-1 bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600">
+                        レビューを投稿
+                    </button>
+                    <button onclick="closeReviewForm()" class="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50">
+                        キャンセル
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Current page state
+        let currentPage = 'feed';
+
+        // Show/hide pages
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId + '-page').classList.add('active');
+            
+            // Update tab styles
+            document.querySelectorAll('#feed-tab, #map-tab').forEach(tab => {
+                tab.classList.remove('text-orange-500', 'border-orange-500');
+                tab.classList.add('text-gray-600', 'border-transparent');
+            });
+            
+            const activeTab = document.getElementById(pageId + '-tab');
+            activeTab.classList.remove('text-gray-600', 'border-transparent');
+            activeTab.classList.add('text-orange-500', 'border-orange-500');
+            
+            currentPage = pageId;
+        }
+
+        // Restaurant selection
+        function selectRestaurant(restaurantId) {
+            // Highlight selected pin (add visual feedback)
+            document.querySelectorAll('.map-pin').forEach(pin => {
+                pin.style.transform = 'translate(-50%, -100%)';
+            });
+            event.target.closest('.map-pin').style.transform = 'translate(-50%, -100%) scale(1.2)';
+            
+            // Show restaurant detail
+            showRestaurantDetail(restaurantId);
+        }
+
+        // Show restaurant detail modal
+        function showRestaurantDetail(restaurantId) {
+            const restaurantNames = {
+                'ramen-taro': 'ラーメン太郎 新宿店',
+                'pasta-mare': 'パスタ・デル・マーレ',
+                'sushi-hana': '寿司花',
+                'cafe-aozora': 'カフェ青空'
+            };
+            
+            document.getElementById('restaurant-name').textContent = restaurantNames[restaurantId] || 'Restaurant Name';
+            document.getElementById('restaurant-detail-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close restaurant detail modal
+        function closeRestaurantDetail() {
+            document.getElementById('restaurant-detail-modal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Show review form modal
+        function showReviewForm() {
+            document.getElementById('review-form-modal').classList.add('active');
+        }
+
+        // Close review form modal
+        function closeReviewForm() {
+            document.getElementById('review-form-modal').classList.remove('active');
+        }
+
+        // Star rating functionality
+        function setRating(category, rating) {
+            const ratingContainer = document.getElementById(category + '-rating');
+            const stars = ratingContainer.querySelectorAll('.star');
+            
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('filled');
+                } else {
+                    star.classList.remove('filled');
+                }
+            });
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.modal.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+                document.body.style.overflow = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>
