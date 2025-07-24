@@ -103,8 +103,11 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.router.ServeHTTP(w, r)
 }
 
-// setupRoutes はラーメンブログAPIエンドポイントのすべてのHTTPルートを設定する。
+// setupRoutes はAPIエンドポイントのすべてのHTTPルートを設定する。
 func (a *App) setupRoutes() {
+	// 認証
+	// authMiddleware := middleware.NewAuthMiddleware(a.logger)
+
 	// DI
 	articleRepository := repository.NewArticleRepository(a.db, a.logger)
 	articleService := service.NewArticleService(articleRepository, a.logger)
