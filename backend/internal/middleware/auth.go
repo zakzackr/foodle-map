@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	apperrors "github.com/zakzackr/ramen-blog/backend/internal/errors"
 )
 
@@ -76,21 +77,52 @@ func verifyJWT(accessToken string) (string, error) {
 	// TODO: Supabaseの公開鍵を使用してJWT検証
 
 	// JWKSをSupabaseから取得する
-	// jwks, err := getJWKS()
-	// if err != nil {
-	// 	return "", fmt.Errorf("JWKSの取得に失敗しました: %w", err)
-	// }
+	jwks, err := getJWKS()
+	if err != nil {
+		return "", fmt.Errorf("JWKSの取得に失敗しました: %w", err)
+	}
 
 	// // 期待値の設定
-	// supabaseURL := os.Getenv("SUPABASE_URL")
-	// if supabaseURL == "" {
-	// 	return "", fmt.Errorf("SUPABASE_URLが存在しません: %w", err)
-	// }
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	if supabaseURL == "" {
+		return "", fmt.Errorf("SUPABASE_URLが存在しません: %w", err)
+	}
 
-	// expectedIssuer := supabaseURL + "/auth/v1"
-	// expectedAudience := "authenticated"
+	expectedIssuer := supabaseURL + "/auth/v1"
+	expectedAudience := "authenticated"
 
-	return "", nil
+	// lestrrat-go/jwxによるJWT検証
+	// 引数にParseOption, ValidationOptionを持つ
+	token, err := jwt.Parse(
+		[]byte(accessToken),
+		// 公開鍵を渡す
+		jwt.WithKeySet(jwks),
+		// 発行者の検証
+		jwt.WithIssuer(expectedIssuer),
+		// 利用者の検証
+		jwt.WithAudience(expectedAudience),
+		// payloadのparseに成功した時のみJWTの検証を行うdate(true)の指定で、
+		// defaultでenabled
+		jwt.WithValidate(true),  
+		// Clock skew許容範囲（1分までサーバー間の時間のズレを許容）
+		jwt.WithAcceptableSkew(time.Minute),
+		// 必須クレームの存在チェック
+		jwt.WithRequiredClaim(jwt.SubjectKey),
+		jwt.WithRequiredClaim(jwt.IssuedAtKey),
+		jwt.WithRequiredClaim(jwt.ExpirationKey),
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("トークンの検証に失敗しました: %w", err)
+	}
+
+	// userIDを取得
+	sub := token.Subject()
+	if sub == "" {
+		return "", fmt.Errorf("トークン内のSubjectクレームが空です")
+	}
+
+	return sub, nil
 }
 
 // SupabaseからJWKSを取得
