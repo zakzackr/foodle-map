@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	apperrors "github.com/zakzackr/ramen-blog/backend/internal/errors"
 )
 
@@ -34,13 +35,15 @@ func NewAuthMiddleware(logger *slog.Logger) *AuthMiddleware {
 }
 
 // JWT検証ミドルウェア
-func RequireAuth(next AppHandler) AppHandler {
+func (am *AuthMiddleware) RequireAuth(next AppHandler) AppHandler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		// Authorizationヘッダからトークン取得
 		authHeader := r.Header.Get("Authorization")
 
 		// Authorizationヘッダのvalidation
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer") {
+			am.logger.Error("Authorizationヘッダが存在しません", "method", r.Method, "URI", r.RequestURI)
+
 			return apperrors. NewAppError(
 				"UNAUTHORIZED",
 				"認証が必要です",
@@ -52,8 +55,10 @@ func RequireAuth(next AppHandler) AppHandler {
 		accessToken := strings.TrimPrefix(authHeader, "Bearer")
 
 		// JWT検証
-		userId, err := verifyJWT(accessToken)
+		userId, err := am.verifyJWT(accessToken)
 		if err != nil {
+			am.logger.Error("JWTの検証に失敗しました", "method", r.Method, "URI", r.RequestURI)
+
 			return apperrors. NewAppError(
 				"INVALID_ACCESS_TOKEN",
 				"無効なトークンです",
@@ -72,25 +77,62 @@ func RequireAuth(next AppHandler) AppHandler {
 }
 
 // JWT検証
-func verifyJWT(accessToken string) (string, error) {
+func (am *AuthMiddleware) verifyJWT(accessToken string) (string, error) {
 	// TODO: Supabaseの公開鍵を使用してJWT検証
 
 	// JWKSをSupabaseから取得する
-	// jwks, err := getJWKS()
-	// if err != nil {
-	// 	return "", fmt.Errorf("JWKSの取得に失敗しました: %w", err)
-	// }
+	jwks, err := getJWKS()
+	if err != nil {
+		am.logger.Error("SupabaseからJWKSの取得に失敗しました", "error", err)
+		return "", fmt.Errorf("JWKSの取得に失敗しました: %w", err)
+	}
 
 	// // 期待値の設定
-	// supabaseURL := os.Getenv("SUPABASE_URL")
-	// if supabaseURL == "" {
-	// 	return "", fmt.Errorf("SUPABASE_URLが存在しません: %w", err)
-	// }
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	if supabaseURL == "" {
+		am.logger.Error("環境変数SUPABASE_URLが存在しません")
+		return "", fmt.Errorf("環境変数SUPABASE_URLが存在しません: %w", err)
+	}
 
-	// expectedIssuer := supabaseURL + "/auth/v1"
-	// expectedAudience := "authenticated"
+	expectedIssuer := supabaseURL + "/auth/v1"
+	expectedAudience := "authenticated"
 
-	return "", nil
+	// lestrrat-go/jwxによるJWT検証
+	// 引数にParseOption, ValidationOptionを持つ
+	token, err := jwt.Parse(
+		[]byte(accessToken),
+		// 公開鍵を渡す
+		jwt.WithKeySet(jwks),
+		// 発行者の検証
+		jwt.WithIssuer(expectedIssuer),
+		// 利用者の検証
+		jwt.WithAudience(expectedAudience),
+		// payloadのparseに成功した時のみJWTの検証を行うdate(true)の指定で、
+		// defaultでenabled
+		jwt.WithValidate(true),  
+		// Clock skew許容範囲（1分までサーバー間の時間のズレを許容）
+		jwt.WithAcceptableSkew(time.Minute),
+		// 必須クレームの存在チェック
+		jwt.WithRequiredClaim(jwt.SubjectKey),
+		jwt.WithRequiredClaim(jwt.IssuedAtKey),
+		jwt.WithRequiredClaim(jwt.ExpirationKey),
+	)
+
+	if err != nil {
+		am.logger.Error("トークンの検証に失敗しました")
+
+		return "", fmt.Errorf("トークンの検証に失敗しました: %w", err)
+	}
+
+	// userIDを取得
+	sub := token.Subject()
+	if sub == "" {
+		am.logger.Error("トークン内のSubjectクレームが空です")
+
+		return "", fmt.Errorf("トークン内のSubjectクレームが空です")
+	}
+
+	return sub, nil
 }
 
 // SupabaseからJWKSを取得
