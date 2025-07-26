@@ -2,13 +2,16 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	apperrors "github.com/zakzackr/ramen-blog/backend/internal/errors"
-	// "github.com/golang-jwt/jwt/v5"
-	// "github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 // JWT認証用ミドルウェア
@@ -20,6 +23,11 @@ type AuthMiddleware struct {
 type ctxKey string
 const userIdKey ctxKey = "userId"
 
+// JWKSのキャッシュ機構
+var (
+	jwksCache *jwk.Cache  // 公開鍵情報jwks.Setをcacheするcontainer
+	once sync.Once  // 関数が一回のみ実行されることを担保する機能を提供
+)
 
 func NewAuthMiddleware(logger *slog.Logger) *AuthMiddleware {
 	return  &AuthMiddleware{logger: logger}
@@ -68,12 +76,47 @@ func verifyJWT(accessToken string) (string, error) {
 	// TODO: Supabaseの公開鍵を使用してJWT検証
 
 	// JWKSをSupabaseから取得する
-	// jwks := getJWKS()
+	// jwks, err := getJWKS()
+	// if err != nil {
+	// 	return "", fmt.Errorf("JWKSの取得に失敗しました: %w", err)
+	// }
 
+	// // 期待値の設定
+	// supabaseURL := os.Getenv("SUPABASE_URL")
+	// if supabaseURL == "" {
+	// 	return "", fmt.Errorf("SUPABASE_URLが存在しません: %w", err)
+	// }
+
+	// expectedIssuer := supabaseURL + "/auth/v1"
+	// expectedAudience := "authenticated"
 
 	return "", nil
 }
 
-// func getJWKS(jwk.Set, error) {
+// SupabaseからJWKSを取得
+func getJWKS()(jwk.Set, error) {
+	supabaseURL:= os.Getenv("SUPABASE_URL")
 
-// }
+	if supabaseURL == "" {
+		return nil, fmt.Errorf("SUPABASE_URLが存在しません")
+	}
+
+	jwksURL := supabaseURL + "/.well-known/jwks.json"
+
+	// 一度だけcacheを初期化
+	// Doは引数のfuncを一回だけ実行
+	once.Do(func() {
+		// jwk.Cacheオブジェクトを生成
+		jwksCache = jwk.NewCache(context.Background())  
+
+		// JwksをFetchする前にURLをセットする必要あり
+		// jwk.WithMinRefreshInterval()は、ResponseヘッダのCache-Control, max-ageと
+		// 比較して長い方をキャッシュ期間として採用。Fallback用
+
+		// WithRefreshInterval()を指定すると、この値が最優先
+		jwksCache.Register(jwksURL, jwk.WithMinRefreshInterval(1*time.Hour))  
+	})
+
+	// キャッシュからJwksを取得
+	return jwksCache.Get(context.Background(), jwksURL)
+}
