@@ -35,13 +35,15 @@ func NewAuthMiddleware(logger *slog.Logger) *AuthMiddleware {
 }
 
 // JWT検証ミドルウェア
-func RequireAuth(next AppHandler) AppHandler {
+func (am *AuthMiddleware) RequireAuth(next AppHandler) AppHandler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		// Authorizationヘッダからトークン取得
 		authHeader := r.Header.Get("Authorization")
 
 		// Authorizationヘッダのvalidation
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer") {
+			am.logger.Error("Authorizationヘッダが存在しません", "method", r.Method, "URI", r.RequestURI)
+
 			return apperrors. NewAppError(
 				"UNAUTHORIZED",
 				"認証が必要です",
@@ -53,8 +55,10 @@ func RequireAuth(next AppHandler) AppHandler {
 		accessToken := strings.TrimPrefix(authHeader, "Bearer")
 
 		// JWT検証
-		userId, err := verifyJWT(accessToken)
+		userId, err := am.verifyJWT(accessToken)
 		if err != nil {
+			am.logger.Error("JWTの検証に失敗しました", "method", r.Method, "URI", r.RequestURI)
+
 			return apperrors. NewAppError(
 				"INVALID_ACCESS_TOKEN",
 				"無効なトークンです",
@@ -73,19 +77,21 @@ func RequireAuth(next AppHandler) AppHandler {
 }
 
 // JWT検証
-func verifyJWT(accessToken string) (string, error) {
+func (am *AuthMiddleware) verifyJWT(accessToken string) (string, error) {
 	// TODO: Supabaseの公開鍵を使用してJWT検証
 
 	// JWKSをSupabaseから取得する
 	jwks, err := getJWKS()
 	if err != nil {
+		am.logger.Error("SupabaseからJWKSの取得に失敗しました", "error", err)
 		return "", fmt.Errorf("JWKSの取得に失敗しました: %w", err)
 	}
 
 	// // 期待値の設定
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	if supabaseURL == "" {
-		return "", fmt.Errorf("SUPABASE_URLが存在しません: %w", err)
+		am.logger.Error("環境変数SUPABASE_URLが存在しません")
+		return "", fmt.Errorf("環境変数SUPABASE_URLが存在しません: %w", err)
 	}
 
 	expectedIssuer := supabaseURL + "/auth/v1"
@@ -113,12 +119,16 @@ func verifyJWT(accessToken string) (string, error) {
 	)
 
 	if err != nil {
+		am.logger.Error("トークンの検証に失敗しました")
+
 		return "", fmt.Errorf("トークンの検証に失敗しました: %w", err)
 	}
 
 	// userIDを取得
 	sub := token.Subject()
 	if sub == "" {
+		am.logger.Error("トークン内のSubjectクレームが空です")
+
 		return "", fmt.Errorf("トークン内のSubjectクレームが空です")
 	}
 
