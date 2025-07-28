@@ -135,6 +135,7 @@ func (am *AuthMiddleware) verifyJWT(accessToken string) (string, error) {
 	return sub, nil
 }
 
+// TODO: Contextをタイムアウト付きにする
 // SupabaseからJWKSを取得
 func getJWKS()(jwk.Set, error) {
 	supabaseURL:= os.Getenv("SUPABASE_URL")
