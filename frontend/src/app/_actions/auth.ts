@@ -1,17 +1,31 @@
-"user server";
+"use server";
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+type AuthState = {
+    success?: boolean;
+    message?: string;
+    error?: string;
+};
+
 /**
  * Magic Link認証用のServer Action
  * Signup/Signinに対応
  */
-export async function SignInWithEmail(formData: FormData) {
+export async function signInWithEmail(
+    prevState: any,
+    formData: FormData
+): Promise<AuthState> {
     // メールアドレスのvalidation
     const email = formData.get("email") as string;
-    if (isValidEmail(email)) {
+    if (!isValidEmail(email)) {
+        // エラーログを表示
+        console.error({
+            message: "Invalid email.",
+            timestamp: new Date().toISOString(),
+        });
         return { error: "有効なメールアドレスを入力してください" };
     }
 
@@ -19,7 +33,7 @@ export async function SignInWithEmail(formData: FormData) {
 
     // MagicLinkでのsignup/signin
     const { error } = await supabase.auth.signInWithOtp({
-        email: "valid.email@supabase.io",
+        email: email,
         options: {
             // Magic Link クリック後のリダイレクト先
             emailRedirectTo: "",
@@ -47,7 +61,10 @@ export async function SignInWithEmail(formData: FormData) {
     }
 
     // TODO: redirect先をログインページ遷移前にする
-    redirect("/");
+    return {
+        success: true,
+        message: "確認メールを送信しました。メールボックスをご確認ください。",
+    };
 }
 
 /**
