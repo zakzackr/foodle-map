@@ -15,7 +15,7 @@ type AuthState = {
  * Signup/Signinに対応
  */
 export async function signInWithEmail(
-    prevState: any,
+    _prevState: AuthState | null,
     formData: FormData
 ): Promise<AuthState> {
     // メールアドレスのvalidation
