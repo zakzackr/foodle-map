@@ -1,7 +1,8 @@
 "use client";
 
+import { signInWithEmail } from "@/app/_actions/auth";
 import { useAuth } from "@/components/AuthProvider";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 
 export function AuthTest() {
     const {
@@ -18,41 +19,12 @@ export function AuthTest() {
     } = useAuth();
 
     const [email, setEmail] = useState("ryuichi12150105syhrh@gmail.com");
-    const [password, setPassword] = useState("password123");
-    const [username, setUsername] = useState("testuser");
     const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        try {
-            await login(email, password);
-            console.log("✅ ログイン成功");
-        } catch (error) {
-            console.error("❌ ログインエラー:", error);
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : "ログインに失敗しました"
-            );
-        }
-    };
-
-    const handleSignup = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        try {
-            await signup(email, password, username);
-            console.log("✅ 新規登録成功");
-        } catch (error) {
-            console.error("❌ 新規登録エラー:", error);
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : "新規登録に失敗しました"
-            );
-        }
-    };
+    const [signInState, signInAction, isPending] = useActionState(
+        signInWithEmail,
+        null
+    );
 
     const handleLogout = async () => {
         setError(null);
@@ -132,7 +104,7 @@ export function AuthTest() {
             </div>
 
             {/* エラー表示 */}
-            {error && (
+            {signInState?.error && (
                 <div
                     style={{
                         color: "red",
@@ -141,7 +113,20 @@ export function AuthTest() {
                         marginBottom: "20px",
                     }}
                 >
-                    <strong>エラー:</strong> {error}
+                    <strong>エラー:</strong> {signInState.error}
+                </div>
+            )}
+
+            {signInState?.success && (
+                <div
+                    style={{
+                        color: "black",
+                        backgroundColor: "#ffebee",
+                        padding: "10px",
+                        marginBottom: "20px",
+                    }}
+                >
+                    {signInState.message}
                 </div>
             )}
 
@@ -177,11 +162,12 @@ export function AuthTest() {
                 <div>
                     <div style={{ marginBottom: "20px" }}>
                         <h3>ログイン</h3>
-                        <form onSubmit={handleLogin}>
+                        <form action={signInAction}>
                             <div style={{ marginBottom: "10px" }}>
                                 <input
                                     type="email"
                                     placeholder="メールアドレス"
+                                    name="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     style={{
@@ -189,20 +175,9 @@ export function AuthTest() {
                                         padding: "5px",
                                     }}
                                 />
-                                <input
-                                    type="password"
-                                    placeholder="パスワード"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    style={{
-                                        marginRight: "10px",
-                                        padding: "5px",
-                                    }}
-                                />
                                 <button
                                     type="submit"
+                                    disabled={isPending}
                                     style={{
                                         padding: "5px 15px",
                                         backgroundColor: "#007bff",
@@ -215,38 +190,6 @@ export function AuthTest() {
                             </div>
                         </form>
                     </div>
-
-                    <div style={{ marginBottom: "20px" }}>
-                        <h3>新規登録</h3>
-                        <form onSubmit={handleSignup}>
-                            <div style={{ marginBottom: "10px" }}>
-                                <input
-                                    type="text"
-                                    placeholder="ユーザー名"
-                                    value={username}
-                                    onChange={(e) =>
-                                        setUsername(e.target.value)
-                                    }
-                                    style={{
-                                        marginRight: "10px",
-                                        padding: "5px",
-                                    }}
-                                />
-                                <button
-                                    type="submit"
-                                    style={{
-                                        padding: "5px 15px",
-                                        backgroundColor: "#28a745",
-                                        color: "white",
-                                        border: "none",
-                                    }}
-                                >
-                                    新規登録
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
                     <div>
                         <button
                             onClick={openLoginModal}
