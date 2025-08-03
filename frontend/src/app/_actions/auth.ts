@@ -79,7 +79,10 @@ function isValidEmail(email: string): boolean {
 /**
  * Signout用のServer Action
  */
-export async function signout() {
+export async function signOut(
+    _prevState: AuthState | null,
+    _formData: FormData
+): Promise<AuthState> {
     const supabase = await createClient();
     const { error } = await supabase.auth.signOut();
 
