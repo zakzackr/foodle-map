@@ -1,6 +1,6 @@
 "use client";
 
-import { signInWithEmail } from "@/app/_actions/auth";
+import { signInWithEmail, signOut } from "@/app/_actions/auth";
 import { useAuth } from "@/components/AuthProvider";
 import { useActionState, useState } from "react";
 
@@ -21,25 +21,15 @@ export function AuthTest() {
     const [email, setEmail] = useState("ryuichi12150105syhrh@gmail.com");
     const [error, setError] = useState<string | null>(null);
 
-    const [signInState, signInAction, isPending] = useActionState(
+    const [signInState, signInAction, isSignInPending] = useActionState(
         signInWithEmail,
         null
     );
 
-    const handleLogout = async () => {
-        setError(null);
-        try {
-            await logout();
-            console.log("✅ ログアウト成功");
-        } catch (error) {
-            console.error("❌ ログアウトエラー:", error);
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : "ログアウトに失敗しました"
-            );
-        }
-    };
+    const [signOutState, signOutAction, isSignOutPending] = useActionState(
+        signOut,
+        null
+    );
 
     const handlePendingActionTest = () => {
         // setPendingAction: (action?: () => Promise<void>) => void;
@@ -133,18 +123,20 @@ export function AuthTest() {
             {/* ログイン済みの場合 */}
             {user ? (
                 <div>
-                    <button
-                        onClick={handleLogout}
-                        style={{
-                            padding: "10px 20px",
-                            backgroundColor: "#dc3545",
-                            color: "white",
-                            border: "none",
-                            marginRight: "10px",
-                        }}
-                    >
-                        ログアウト
-                    </button>
+                    <form action={signOutAction}>
+                        <button
+                            type="submit"
+                            style={{
+                                padding: "10px 20px",
+                                backgroundColor: "#dc3545",
+                                color: "white",
+                                border: "none",
+                                marginRight: "10px",
+                            }}
+                        >
+                            ログアウト
+                        </button>
+                    </form>
                     <button
                         onClick={handlePendingActionTest}
                         style={{
@@ -177,7 +169,7 @@ export function AuthTest() {
                                 />
                                 <button
                                     type="submit"
-                                    disabled={isPending}
+                                    disabled={isSignInPending}
                                     style={{
                                         padding: "5px 15px",
                                         backgroundColor: "#007bff",
