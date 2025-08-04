@@ -35,8 +35,9 @@ export async function signInWithEmail(
     const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
-            // Magic Link クリック後のリダイレクト先
-            emailRedirectTo: "",
+            // TODO: Magic Link クリック後のリダイレクト先の設定
+            // TODO: /auth/callbackがないとトークン処理ができない？要調査
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
         },
     });
 
@@ -68,12 +69,20 @@ export async function signInWithEmail(
 }
 
 /**
- * メールアドレスの基本バリデーション
+ * メールアドレスのバリデーション（RFC準拠）
  */
 function isValidEmail(email: string): boolean {
-    // 基本チェック: @の前後に1文字以上の文字が存在するか
-    const basicPattern = /^.+@.+$/;
-    return basicPattern.test(email.trim());
+    const trimmed = email.trim();
+    
+    if (trimmed.length === 0 || trimmed.length > 254) return false;
+    
+    const emailPattern = /^[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/;
+    
+    if (!emailPattern.test(trimmed)) return false;
+    
+    // 追加チェック
+    const [local] = trimmed.split('@');
+    return local.length <= 64 && !trimmed.includes('..');
 }
 
 /**
